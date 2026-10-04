@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 문화시민강좌 신청자 확인</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success-bg: #dcfce7;
+            --success-text: #166534;
+            --warning-bg: #ffedd5;
+            --warning-text: #9a3412;
+            --pending-bg: #fef3c7;
+            --pending-text: #92400e;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 24px 16px;
+            max-width: 1150px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .header h1 { margin: 0 0 8px 0; font-size: 26px; color: var(--primary); }
+        .header p { margin: 0; color: var(--text-muted); font-size: 15px; font-weight: 500; }
+
+        .card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        textarea {
+            width: 100%;
+            height: 110px;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            resize: vertical;
+            font-family: inherit;
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-secondary { background: #e2e8f0; color: #334155; }
+        .btn-secondary:hover { background: #cbd5e1; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: #475569; }
+        .btn-outline:hover { background: #f1f5f9; }
+        .btn-success { background: #16a34a; color: white; }
+        .btn-success:hover { background: #15803d; }
+
+        .search-box {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .search-box input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 15px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        .stat-card {
+            background: #f1f5f9;
+            padding: 12px 8px;
+            border-radius: 8px;
+        }
+        .stat-num { font-size: 18px; font-weight: bold; color: var(--primary); }
+        .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+        th, td {
+            padding: 10px 8px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+        th { background: #f8fafc; font-weight: 600; color: var(--text-muted); }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-success { background: var(--success-bg); color: var(--success-text); }
+        .badge-warning { background: var(--warning-bg); color: var(--warning-text); }
+        .badge-pending { background: var(--pending-bg); color: var(--pending-text); }
+        .badge-count { background: #e0e7ff; color: #3730a3; font-weight: bold; }
+
+        .action-cell {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            th, td { padding: 8px 4px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>2026 문화시민강좌 신청자 확인</h1>
+        <p>인공지능에 대한 오해와 진실</p>
+    </div>
+
+    <!-- 1. 명단 등록 -->
+    <div class="card">
+        <div class="card-title">신청자 명단 등록</div>
+        <textarea id="pasteInput" placeholder="엑셀에서 명단 전체를 복사해서 이곳에 붙여넣으세요."></textarea>
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="processList()">명단 등록하기</button>
+            <button class="btn btn-secondary" onclick="resetAll()">명단 전체 초기화</button>
+        </div>
+    </div>
+
+    <!-- 2. 현황 통계 & 검색 및 출석체크 -->
+    <div class="card">
+        <div class="card-title">
+            <span>출석 체크 & 현황</span>
+            <button class="btn btn-secondary" style="font-size:12px; padding:4px 8px;" onclick="downloadCSV()">엑셀(CSV) 다운로드</button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-num" id="statTotal">0건 (0명)</div>
+                <div class="stat-label">총 신청 (신청건 / 총인원)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-num" id="statChecked" style="color:#16a34a;">0명</div>
+                <div class="stat-label">실제 입장 인원</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-num" id="statUnchecked" style="color:#dc2626;">0명</div>
+                <div class="stat-label">미입장 인원</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-num" id="statRate">0%</div>
+                <div class="stat-label">입장률 (인원 기준)</div>
+            </div>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="이름/연락처 입력 후 Enter 누르면 자동 출석!" oninput="renderTable()" onkeydown="handleSearchEnter(event)" onfocus="this.select()">
+            <button class="btn btn-secondary" onclick="clearSearch()">초기화</button>
+        </div>
+
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>신청자 성함</th>
+                        <th>생년월일</th>
+                        <th>연락처</th>
+                        <th>인원</th>
+                        <th>동반인 정보</th>
+                        <th>비고</th>
+                        <th>입장 상태</th>
+                        <th>입장 시간</th>
+                        <th>개별 출석 체크</th>
+                    </tr>
+                </thead>
+                <tbody id="memberTable">
+                    <tr><td colspan="9" style="text-align:center; color: var(--text-muted); padding:20px;">등록된 신청자가 없습니다. 명단을 등록해주세요.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let members = JSON.parse(localStorage.getItem('special_lecture_members_v2') || '[]');
+
+        function saveToStorage() {
+            localStorage.setItem('special_lecture_members_v2', JSON.stringify(members));
+        }
+
+        function parseHeadcount(str) {
+            if (!str) return 1;
+            if (str.includes('2')) return 2;
+            if (str.includes('3')) return 3;
+            const match = str.match(/\d+/);
+            return match ? parseInt(match[0], 10) : 1;
+        }
+
+        function processList() {
+            const rawText = document.getElementById('pasteInput').value.trim();
+            if (!rawText) return alert('명단을 입력해주세요!');
+
+            const lines = rawText.split('\n');
+            const newMembers = lines.filter(l => l.trim() !== '').map((line, index) => {
+                let parts = line.includes('\t') ? line.split('\t') : line.split(',');
+                parts = parts.map(p => p.trim());
+
+                const headcount = parseHeadcount(parts[3]);
+
+                return {
+                    id: Date.now() + index,
+                    name: parts[0] || '미입력',
+                    birth: parts[1] || '-',
+                    phone: parts[2] || '-',
+                    countStr: parts[3] || '1인',
+                    headcount: headcount,
+                    companion: parts[4] || '-',
+                    note: parts[5] || '',
+                    mainChecked: false,
+                    mainTime: '',
+                    compChecked: false,
+                    compTime: ''
+                };
+            });
+
+            members = newMembers;
+            saveToStorage();
+            document.getElementById('pasteInput').value = '';
+            renderTable();
+            alert(`총 ${members.length}건의 신청자 명단이 등록되었습니다!`);
+        }
+
+        // 엔터 키 입력 시 자동 출석 로직
+        function handleSearchEnter(e) {
+            if (e.key !== 'Enter') return;
+
+            const searchInput = document.getElementById('searchInput');
+            const search = searchInput.value.trim().toLowerCase();
+            if (!search) return;
+
+            const filtered = members.filter(m => 
+                m.name.toLowerCase().includes(search) || 
+                m.phone.includes(search) ||
+                m.birth.includes(search) ||
+                m.companion.toLowerCase().includes(search) ||
+                m.note.toLowerCase().includes(search)
+            );
+
+            if (filtered.length === 0) {
+                alert('검색 결과가 없습니다.');
+                return;
+            }
+
+            if (filtered.length > 1) {
+                alert(`검색 결과가 ${filtered.length}명입니다. 이름이나 전화번호를 더 정확히 입력해주세요!`);
+                return;
+            }
+
+            // 정확히 1명만 검색된 경우
+            const m = filtered[0];
+
+            if (m.headcount === 1) {
+                if (!m.mainChecked) {
+                    toggleCheck(m.id, 'main');
+                    alert(`✅ [1인 신청] ${m.name}님 출석 완료되었습니다!`);
+                    clearSearch(); // 1인 출석 완료 후 검색창 초기화
+                } else {
+                    alert(`⚠️ ${m.name}님은 이미 출석 완료된 분입니다.`);
+                }
+            } else {
+                alert(`ℹ️ 2인 신청건입니다. 아래 목록에서 [신청자 입장] 또는 [동반인 입장] 버튼을 클릭해 주세요!`);
+                searchInput.focus();
+                searchInput.select();
+            }
+        }
+
+        function toggleCheck(id, target) {
+            const member = members.find(m => m.id === id);
+            if (!member) return;
+
+            const now = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+
+            if (target === 'main') {
+                member.mainChecked = !member.mainChecked;
+                member.mainTime = member.mainChecked ? now : '';
+            } else if (target === 'comp') {
+                member.compChecked = !member.compChecked;
+                member.compTime = member.compChecked ? now : '';
+            }
+
+            saveToStorage();
+            renderTable();
+
+            // 핵심 수정: 출석 버튼 클릭 직후, 검색창으로 포커스를 이동시키고 전체 텍스트 블록 선택!
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput.value.trim() !== '') {
+                searchInput.focus();
+                searchInput.select();
+            }
+        }
+
+        function renderTable() {
+            const search = document.getElementById('searchInput').value.trim().toLowerCase();
+            const tbody = document.getElementById('memberTable');
+            tbody.innerHTML = '';
+
+            const filtered = members.filter(m => 
+                m.name.toLowerCase().includes(search) || 
+                m.phone.includes(search) ||
+                m.birth.includes(search) ||
+                m.companion.toLowerCase().includes(search) ||
+                m.note.toLowerCase().includes(search)
+            );
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color: var(--text-muted); padding: 20px;">검색 결과가 없습니다.</td></tr>`;
+            } else {
+                filtered.forEach(m => {
+                    let checkedCount = 0;
+                    if (m.mainChecked) checkedCount++;
+                    if (m.headcount > 1 && m.compChecked) checkedCount++;
+
+                    let statusBadge = '';
+                    if (checkedCount === 0) {
+                        statusBadge = `<span class="badge badge-pending">대기 (0/${m.headcount})</span>`;
+                    } else if (checkedCount < m.headcount) {
+                        statusBadge = `<span class="badge badge-warning">부분입장 (${checkedCount}/${m.headcount})</span>`;
+                    } else {
+                        statusBadge = `<span class="badge badge-success">입장완료 (${checkedCount}/${m.headcount})</span>`;
+                    }
+
+                    let timeArr = [];
+                    if (m.mainChecked) timeArr.push(`신청자: ${m.mainTime}`);
+                    if (m.headcount > 1 && m.compChecked) timeArr.push(`동반인: ${m.compTime}`);
+                    let timeDisplay = timeArr.length > 0 ? timeArr.join('<br>') : '-';
+
+                    let buttonsHtml = '';
+                    if (m.headcount === 1) {
+                        buttonsHtml = `
+                            <button class="btn ${m.mainChecked ? 'btn-secondary' : 'btn-primary'}" onclick="toggleCheck(${m.id}, 'main')">
+                                ${m.mainChecked ? '취소' : '신청자 입장'}
+                            </button>
+                        `;
+                    } else {
+                        buttonsHtml = `
+                            <button class="btn ${m.mainChecked ? 'btn-secondary' : 'btn-primary'}" onclick="toggleCheck(${m.id}, 'main')">
+                                ${m.mainChecked ? '신청자 취소' : '신청자 입장'}
+                            </button>
+                            <button class="btn ${m.compChecked ? 'btn-secondary' : 'btn-success'}" onclick="toggleCheck(${m.id}, 'comp')">
+                                ${m.compChecked ? '동반인 취소' : '동반인 입장'}
+                            </button>
+                        `;
+                    }
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${m.name}</strong></td>
+                        <td>${m.birth}</td>
+                        <td>${m.phone}</td>
+                        <td><span class="badge badge-count">${m.countStr}</span></td>
+                        <td><small>${m.companion}</small></td>
+                        <td><small style="color:var(--text-muted);">${m.note}</small></td>
+                        <td>${statusBadge}</td>
+                        <td><small>${timeDisplay}</small></td>
+                        <td class="action-cell">${buttonsHtml}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            updateStats();
+        }
+
+        function updateStats() {
+            const totalCases = members.length;
+            const totalPeople = members.reduce((sum, m) => sum + m.headcount, 0);
+
+            let actualCheckedPeople = 0;
+            members.forEach(m => {
+                if (m.mainChecked) actualCheckedPeople++;
+                if (m.headcount > 1 && m.compChecked) actualCheckedPeople++;
+            });
+
+            const uncheckedPeople = totalPeople - actualCheckedPeople;
+            const rate = totalPeople > 0 ? Math.round((actualCheckedPeople / totalPeople) * 100) : 0;
+
+            document.getElementById('statTotal').innerText = `${totalCases}건 (${totalPeople}명)`;
+            document.getElementById('statChecked').innerText = `${actualCheckedPeople}명`;
+            document.getElementById('statUnchecked').innerText = `${uncheckedPeople}명`;
+            document.getElementById('statRate').innerText = `${rate}%`;
+        }
+
+        function clearSearch() {
+            const input = document.getElementById('searchInput');
+            input.value = '';
+            input.focus();
+            renderTable();
+        }
+
+        function resetAll() {
+            if (confirm('등록된 특강 명단과 출석 기록이 모두 삭제됩니다. 정말 초기화할까요?')) {
+                members = [];
+                localStorage.removeItem('special_lecture_members_v2');
+                renderTable();
+            }
+        }
+
+        function downloadCSV() {
+            if (members.length === 0) return alert('다운로드할 명단이 없습니다.');
+            
+            let csv = '신청자성함,생년월일,연락처,신청인원,동반인정보,비고,신청자입장여부,신청자입장시간,동반인입장여부,동반인입장시간\n';
+            members.forEach(m => {
+                const mainStatus = m.mainChecked ? '입장' : '미입장';
+                const compStatus = m.headcount > 1 ? (m.compChecked ? '입장' : '미입장') : '해당없음';
+                csv += `"${m.name}","${m.birth}","${m.phone}","${m.countStr}","${m.companion}","${m.note}","${mainStatus}","${m.mainTime}","${compStatus}","${m.compTime}"\n`;
+            });
+
+            const bom = '\uFEFF';
+            const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `문화시민강좌_출석명단_${new Date().toISOString().slice(0,10)}.csv`;
+            link.click();
+        }
+
+        // 초기 실행
+        renderTable();
+    </script>
+</body>
+</html>
